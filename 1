@@ -1,0 +1,54 @@
+/*Ex 1 All the weeks and each repair cost of devices per week.*/
+SELECT 
+EXTRACT(isoweek FROM timestamp_utc) AS week,
+SUM(repair_cost) AS total_repair_cost
+FROM active_users.device_repairs
+GROUP BY week
+ORDER BY week;
+
+/*Ex 2 We extract the monthly number of repair devices.*/
+SELECT 
+FORMAT_TIMESTAMP('%B. %Y', timestamp_utc) AS month,
+TRIM(defect_category) AS device_part,
+COUNT(defect_category) AS total_repairs
+FROM active_users.device_defects
+GROUP BY month, device_part
+ORDER BY month;
+
+/*Ex 3 Here I calculate the number of unresolved issues in 2020*/
+SELECT EXTRACT (YEAR FROM date) AS year_2020,
+ (
+    (SELECT COUNT(device_defects)
+    FROM active_users.device_defects) -
+    (SELECT COUNT (device_repairs) 
+    FROM active_users.device_repairs)
+    ) 
+    AS unresolved_issues
+    FROM `active_users.device_defects`
+      WHERE EXTRACT(YEAR FROM date) = 2020
+      GROUP BY year_2020;
+
+/* Revenue in February 2020 per week*/
+SELECT
+EXTRACT(week FROM registered_at) - EXTRACT(week FROM DATE '2020-01-31') AS week,
+SUM(base_price) AS revenue
+FROM `active_users.customers`
+WHERE EXTRACT(month FROM registered_at) = 2
+GROUP BY week
+ORDER BY week;
+
+/*Devices ranked by the number of unique defect types they have experienced*/
+WITH trimmed AS 
+(SELECT
+device_id,
+TRIM(defect_category) AS trimmed_decfect_category
+FROM active_users.device_defects)
+
+SELECT
+device_id,
+COUNT(DISTINCT(trimmed_decfect_category)) AS defects
+FROM trimmed
+GROUP BY device_id
+ORDER BY defects DESC;
+
+    
